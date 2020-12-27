@@ -1,0 +1,237 @@
+<!DOCTYPE html>
+
+<head>
+    <meta charset="utf-8">
+    <title>Character game</title>
+    <style>
+        html {
+            font-family: sans-serif;
+            font-size: 20px;
+            line-height: 0;
+        }
+
+        body {
+            max-width: 100vw;
+            margin-top: 1rem;
+            background-color: #f9f8f7;
+        }
+
+        input {
+            border-radius: .5rem;
+            margin: auto;
+            display: block;
+            font-size: 70px;
+            background-color: #f9f8f7;
+            background-image: linear-gradient(-100deg, rgba(255, 250, 150, .15), rgba(255, 255, 0, .5) 100%, rgba(255, 250, 150, .25));
+        }
+
+        h1 {
+            font-size: 120px;
+            margin-top: 2rem;
+            line-height: 1;
+            text-shadow: rgba(0, 0, 0, .25) 0 5px 10px;
+            text-align: center;
+            background-image: linear-gradient(-100deg, rgba(255, 250, 150, .15), rgba(102, 204, 51, .5) 100%, rgba(255, 250, 150, .25));
+        }
+
+        canvas {
+            padding: 2rem;
+            margin: auto;
+            display: block;
+        }
+
+        #background {
+            z-index: 2;
+        }
+
+        .grid-container {
+            display: grid;
+        }
+
+        @keyframes win {
+            0% {
+                transform: scale(3);
+            }
+
+            25% {
+                transform: scale(1);
+            }
+
+            50% {
+                transform: scale(3);
+            }
+
+            75% {
+                transform: scale(1);
+            }
+
+            100% {
+                transform: scale(3);
+            }
+        }
+
+        @keyframes lose {
+            100% {
+                transform: scale(1.2);
+                background-image: linear-gradient(-100deg, rgba(255, 250, 150, .15), rgba(205, 92, 92, 0.8) 100%, rgba(205, 92, 92, 0.25));
+            }
+        }
+
+        .win {
+            animation: win 2s;
+        }
+
+        .lose {
+            animation: lose .5s;
+        }
+    </style>
+</head>
+
+<body onload="draw();">
+    <div class="grid-container">
+        <input type="password" id="word" name="word" maxlength="28" minlength="0" placeholder="Enter a word, press tab">
+        <h1 id="show">&nbsp;</h1>
+    </div>
+    <div>
+        <canvas id="background" width="1000px" height="1000px">
+            <h1>The character game requires a browser supporting canvas API</h1>
+        </canvas>
+    </div>
+
+</body>
+<script type="text/javascript">
+
+    function draw() {
+        let canvas = document.getElementById('background');
+        // new SpeechSynthesisUtterance object
+        let utter = new SpeechSynthesisUtterance();
+        // https://stackoverflow.com/questions/47379725/how-do-i-add-a-voice-language-to-speechsynthesis
+        utter.lang = 'fi-FI';
+
+        if (canvas.getContext && word !== undefined) {
+
+            let ctx = canvas.getContext('2d');
+            let i = 0;
+            let word = document.getElementById("word").value;
+            let chosenChar = word[i];
+            document.getElementById("word").addEventListener("blur", updateWord);
+
+            function updateWord() {
+                clear();
+                word = document.getElementById("word").value;
+                i = 0;
+                chosenChar = word[i];
+                document.getElementById("show").innerHTML = "&nbsp;";
+                init();
+            }
+
+            function getRandomIntInclusive(min, max) {
+                min = Math.ceil(min);
+                max = Math.floor(max);
+                return Math.floor(Math.random() * (max - min + 1) + min); //The maximum is inclusive and the minimum is inclusive 
+            }
+
+            function clear() {
+                ctx.clearRect(0, 0, canvas.width, canvas.height);
+                document.getElementById("show").innerHTML = "&nbsp;";
+            }
+
+            function win() {
+                utter.text = word;
+                // speak
+                window.speechSynthesis.speak(utter);
+                document.getElementById("show").textContent += chosenChar + "😄";
+                ctx.clearRect(0, 0, canvas.width, canvas.height);
+                document.getElementById("show").className = "win";
+                setTimeout(function () { document.getElementById("show").className = "" }, 2000);
+            }
+
+            function lose() {
+                document.getElementById("show").className = "lose";
+                setTimeout(function () { document.getElementById("show").className = "" }, 500);
+            }
+
+            function init() {
+                console.log("word: " + word);
+                let x = getRandomIntInclusive(100, 900);
+                let y = getRandomIntInclusive(100, 900);
+                ctx.beginPath();
+                ctx.arc(x, y, 60, 0, Math.PI * 2); // Outer circle
+                ctx.fillStyle = 'rgba(255, 165, 0, 0.8)';
+                ctx.fill();
+                ctx.addHitRegion({ id: 'circle' });
+                ctx.fillStyle = '#000';
+                ctx.font = '90px Arial';
+                ctx.textAlign = "center";
+                ctx.textBaseline = "middle";
+                if (chosenChar !== undefined) {
+                    //draw the character
+                    ctx.fillText(chosenChar, x, y + 3);
+                    obstacle();
+                } else {
+                    clear();
+                }
+            }
+
+            function pause() {
+                // The function will utter the character out loud
+                ctx.beginPath();
+                ctx.arc(60, 60, 60, 0, Math.PI * 2); // Player has to move cursor to the beginning, to avoid accidental collision
+                ctx.fillStyle = 'rgba(255, 165, 0, 0.8)';
+                ctx.fill();
+                ctx.textAlign = "center";
+                ctx.textBaseline = "middle";
+                ctx.fillText("🗣", 60, 63);
+                ctx.addHitRegion({ id: 'pause' });
+            }
+
+            function obstacle() {
+                ctx.beginPath();
+                let piste = getRandomIntInclusive(100, 900);
+                let piste2 = getRandomIntInclusive(100, 900);
+                let piste3 = getRandomIntInclusive(100, 900);
+                ctx.moveTo(piste, piste2);
+                ctx.lineTo(500, 100);
+                ctx.lineTo(piste3, piste2);
+                ctx.lineTo(piste, piste2);
+                ctx.lineWidth = 10;
+                ctx.lineCap = "round";
+                ctx.stroke();
+                ctx.fillStyle = 'rgba(205, 92, 92, 0.8)';
+                ctx.fill();
+                ctx.addHitRegion({ id: 'line' });
+            }
+
+            canvas.addEventListener('mousemove', function (event) {
+                if (event.region == "pause") {
+                    // This will utter the character out loud
+                    utter.text = chosenChar;
+                    window.speechSynthesis.speak(utter);
+
+                    ctx.clearRect(0, 0, canvas.width, canvas.height);
+                    document.getElementById("show").textContent += chosenChar;
+                    i += 1;
+                    chosenChar = word[i]; //advance to the next char
+                    init();
+                }
+
+                if (event.region == "circle") {
+                    ctx.clearRect(0, 0, canvas.width, canvas.height);
+                    // If the last char, win
+                    if (i == word.length - 1) {
+                        win();
+                    } else if (chosenChar != undefined) {
+                        // Player has to move cursor to the beginning, to avoid accidental collision
+                        pause();
+                    }
+                } else if (event.region == "line") {
+                    //reset in case the cursor hits an obstacle
+                    lose();
+                    updateWord();
+                }
+            });
+        }
+    }
+</script>
+
+</html>
