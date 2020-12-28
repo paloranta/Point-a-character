@@ -1,4 +1,4 @@
-# Point-a-character
+# Point-a-character 
 https://paloranta.github.io/point-a-character-demo/index.html
 
 A game for teaching a child to read and move the mouse cursor around.
